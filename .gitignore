@@ -48,3 +48,28 @@ Thumbs.db
 # Optional (project specific)
 # ------------------------------
 *.csv
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Virtual Environment
+env/
+venv/
+.env
+
+# Django
+db.sqlite3
+media/
+staticfiles/
+
+# VS Code / IDE
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# Logs
+*.log
