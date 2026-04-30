@@ -1,5 +1,5 @@
-from views.upload import UploadCSVView
-from views.analytics import (
+from .upload import UploadCSVView
+from .analytics import (
     CategorySummaryView,
     DailySummaryView,
     MonthlySummaryView

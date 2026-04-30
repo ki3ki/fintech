@@ -1,4 +1,4 @@
-# transactions/views.py
+# transactions/views/ upload.py
 
 import pandas as pd
 from rest_framework.generics import GenericAPIView
@@ -8,11 +8,14 @@ from rest_framework.parsers import MultiPartParser, FormParser
 from transactions.models import Transaction
 from transactions.serializers import UploadCSVSerializer
 from transactions.ai_service import categorize_transaction
+import logging
+logger = logging.getLogger(__name__)
 
 
 class UploadCSVView(GenericAPIView):
     serializer_class = UploadCSVSerializer
     parser_classes = [MultiPartParser, FormParser]
+    #logger.info("UploadCSVView initialized")
 
     def get(self, request):
         return Response({
@@ -20,7 +23,8 @@ class UploadCSVView(GenericAPIView):
         })
 
     def post(self, request):
-        # ✅ Step 1: Validate file
+        #  Step 1: Validate file
+        logger.info("Upload request received")
         serializer = self.get_serializer(data=request.data)
 
         if not serializer.is_valid():
@@ -28,13 +32,14 @@ class UploadCSVView(GenericAPIView):
 
         file = serializer.validated_data['file']
 
-        # ✅ Step 2: Read CSV
+        #  Step 2: Read CSV
         try:
             df = pd.read_csv(file)
         except Exception:
+            logger.error("Failed to read CSV file", exc_info=True)
             return Response({"error": "Invalid CSV file"}, status=400)
 
-        # ✅ Step 3: Validate columns
+        # Step 3: Validate columns
         required_columns = ['description', 'amount']
         for col in required_columns:
             if col not in df.columns:
@@ -43,7 +48,7 @@ class UploadCSVView(GenericAPIView):
                     status=400
                 )
 
-        # ✅ Step 4: Convert to model objects
+        #  Step 4: Convert to model objects
         transactions = []
 
         for _, row in df.iterrows():
@@ -60,10 +65,10 @@ class UploadCSVView(GenericAPIView):
         if not transactions:
             return Response({"error": "No valid data found"}, status=400)
 
-        # ✅ Step 5: Bulk insert
+        #  Step 5: Bulk insert
         Transaction.objects.bulk_create(transactions)
 
-        # ✅ Step 6: AI categorization (optimized)
+        #  Step 6: AI categorization (optimized)
         uncategorized = list(
             Transaction.objects.filter(category__isnull=True)
         )
@@ -74,7 +79,7 @@ class UploadCSVView(GenericAPIView):
         # 🚀 Bulk update instead of saving one by one
         Transaction.objects.bulk_update(uncategorized, ['category'])
 
-        # ✅ Step 7: Response
+        #  Step 7: Response
         return Response({
             "message": "Uploaded and categorized successfully",
             "records_processed": len(transactions)
